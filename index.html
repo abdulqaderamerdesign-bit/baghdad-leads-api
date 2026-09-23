@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Maps Scraper — Flask API (Open Source / Free)</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;800;900&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style type="text/tailwindcss">
+    @theme {
+      --font-display: 'Cairo', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace, monospace;
+      --color-void: #060a14;
+      --color-deep: #0c1120;
+      --color-surface: #0f1528;
+      --color-surface-2: #11182e;
+      --color-card: #121b30;
+      --color-ink: #f2f4f8;
+      --color-ink-soft: #b8bfd0;
+      --color-ink-muted: #7a8498;
+      --color-ink-ghost: #55607a;
+      --color-amber: #f0b050;
+      --color-teal: #2ec4a8;
+      --color-rose: #e86a6a;
+      --color-violet: #a28ae6;
+    }
+  </style>
+
+  <style>
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Cairo', system-ui, sans-serif; background-color: #060a14; color: #f2f4f8; overflow-x: hidden; }
+    ::selection { background: #f0b05028; color: #f0b050; }
+    .mesh-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+    .mesh-orb { position: absolute; border-radius: 50%; filter: blur(130px); opacity: 0.3; animation: orbFloat 26s ease-in-out infinite alternate; }
+    .mesh-orb-1 { width: 550px; height: 550px; top: -15%; left: -10%; background: #f0b050; animation-delay: 0s; }
+    .mesh-orb-2 { width: 450px; height: 450px; bottom: -12%; right: -8%; background: #2ec4a8; animation-delay: -9s; animation-duration: 30s; }
+    .mesh-orb-3 { width: 400px; height: 400px; top: 35%; left: 25%; background: #a28ae6; animation-delay: -18s; animation-duration: 22s; opacity: 0.18; }
+    @keyframes orbFloat { 0%{transform:translate(0,0) scale(1)} 33%{transform:translate(35px,-25px) scale(1.06)} 66%{transform:translate(-15px,18px) scale(0.96)} 100%{transform:translate(25px,-12px) scale(1.04)} }
+    .glass-card { background: rgba(18,27,48,0.7); backdrop-filter: blur(22px) saturate(130%); -webkit-backdrop-filter: blur(22px) saturate(130%); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 24px 60px rgba(0,0,0,0.35); }
+    pre { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent; }
+    pre::-webkit-scrollbar { height: 8px; } pre::-webkit-scrollbar-track { background: transparent; } pre::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; } pre::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+    .tag-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.01em; background: rgba(240,176,80,0.08); color: #f0b050; border: 1px solid rgba(240,176,80,0.15); }
+    .btn-lift { transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease; }
+    .btn-lift:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(240,176,80,0.22); }
+  </style>
+</head>
+
+<body class="min-h-screen relative">
+  <div class="mesh-bg" aria-hidden="true">
+    <div class="mesh-orb mesh-orb-1"></div>
+    <div class="mesh-orb mesh-orb-2"></div>
+    <div class="mesh-orb mesh-orb-3"></div>
+  </div>
+
+  <main class="relative z-10 max-w-4xl mx-auto px-6 py-20 md:py-28">
+    <header class="text-center mb-14">
+      <div class="inline-flex items-center gap-2.5 mb-6 px-4 py-1.5 rounded-full bg-amber/10 border border-amber/15 text-amber text-sm font-semibold tracking-wide shadow-[0_0_18px_rgba(240,176,80,0.08)]">
+        <i class="fa-solid fa-server text-xs"></i>
+        <span>Flask API — مفتوح المصدر ومجاني</span>
+      </div>
+      <h1 class="text-[2.6rem] md:text-[3.5rem] font-extrabold leading-[1.12] tracking-tight mb-5">
+        <span class="text-gradient-amber">Google Maps Scraper</span>
+        <br />
+        <span class="text-ink font-light">بدون APIs مدفوعة</span>
+      </h1>
+      <p class="text-ink-muted text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+        تطبيق Python / Flask جاهز للإنتاج مع Selenium. يستهدف <strong class="text-ink-soft">بغداد، العراق</strong> ويجمع بيانات (الاسم، العنوان، الهاتف، التقييم، الفئة) عبر 19 فئة تجارية.
+      </p>
+    </header>
+
+    <!-- Status -->
+    <section class="flex flex-wrap justify-center gap-3 mb-14" aria-label="حالة الإعدادات">
+      <div class="glass-card px-5 py-3 flex items-center gap-3 shadow-[0_0_24px_rgba(46,196,168,0.12)]">
+        <span class="w-2.5 h-2.5 rounded-full bg-teal animate-pulse"></span>
+        <span class="text-sm font-semibold text-ink-soft">Free Open Source</span>
+      </div>
+      <div class="glass-card px-5 py-3 flex items-center gap-3 shadow-[0_0_24px_rgba(162,138,230,0.12)]">
+        <span class="w-2.5 h-2.5 rounded-full bg-violet"></span>
+        <span class="text-sm font-semibold text-ink-soft">19 فئة تجارية</span>
+      </div>
+      <div class="glass-card px-5 py-3 flex items-center gap-3 shadow-[0_0_24px_rgba(240,176,80,0.12)]">
+        <span class="w-2.5 h-2.5 rounded-full bg-amber"></span>
+        <span class="text-sm font-semibold text-ink-soft">52 حد أقصى لكل طلب</span>
+      </div>
+    </section>
+
+    <!-- Main JSON / Endpoint info -->
+    <article class="glass-card overflow-hidden mb-14 relative" aria-label="تفاصيل الـ API">
+      <div class="h-1 w-full bg-gradient-to-r from-amber via-violet to-teal"></div>
+      <div class="px-6 py-4 border-b border-white/[0.05] flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-amber/20 to-amber-deep/30 flex items-center justify-center border border-amber/15">
+          <i class="fa-solid fa-terminal text-amber"></i>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-ink">POST /scrape</h2>
+          <p class="text-[11px] text-ink-ghost font-mono">Flask · JSON Request / Response</p>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-extrabold text-ink">مثال على الطلب (Request Body)</h3>
+          <button onclick="copyBlock('reqBlock')" class="btn-lift inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber to-amber-deep text-void text-xs font-extrabold shadow-lg shadow-amber/20 hover:shadow-amber/40 focus:outline-none" aria-label="نسخ كود الطلب">
+            <i class="fa-regular fa-copy"></i>
+            <span>نسخ الكود</span>
+          </button>
+        </div>
+        <pre class="rounded-xl bg-void/60 border border-white/[0.06] p-4 text-[13px] md:text-[14px] leading-[1.8] font-mono text-ink-soft overflow-x-auto relative" dir="ltr" id="reqBlock"><code>{
+  "category": "صيدليات",
+  "limit": 52
+}</code></pre>
+
+        <div class="flex items-center justify-between mb-3 mt-6">
+          <h3 class="text-sm font-extrabold text-ink">مثال على الاستجابة (Response)</h3>
+          <button onclick="copyBlock('resBlock')" class="btn-lift inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-teal to-violet text-void text-xs font-extrabold shadow-lg shadow-teal/20 hover:shadow-teal/40 focus:outline-none" aria-label="نسخ كود الاستجابة">
+            <i class="fa-regular fa-copy"></i>
+            <span>نسخ الكود</span>
+          </button>
+        </div>
+        <pre class="rounded-xl bg-void/60 border border-white/[0.06] p-4 text-[13px] md:text-[14px] leading-[1.8] font-mono text-ink-soft overflow-x-auto relative" dir="ltr" id="resBlock"><code>{
+  "status": "success",
+  "category_requested": "صيدليات",
+  "category_mapped": "Pharmacies",
+      "location": "Baghdad, Iraq",
+  "requested_limit": 52,
+  "results_fetched": 48,
+  "data": [
+    {
+      "category": "Pharmacies",
+      "name": "صيدلية النور",
+      "address": "شارع الجمهورية - الرمادي",
+      "phone": "+964 782 123 4567",
+      "rating": 4.5,
+      "source_location": "Baghdad, Iraq",
+      "original_query": "صيدليات"
+    }
+  ]
+}</code></pre>
+      </div>
+    </article>
+
+    <!-- Categories -->
+    <section class="glass-card p-7 mb-10" aria-label="الفئات المدعومة">
+      <h3 class="text-xl font-extrabold text-ink mb-6 flex items-center gap-3">
+        <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet/20 to-violet-deep/30 flex items-center justify-center border border-violet/15 shadow-[0_0_20px_rgba(162,138,230,0.15)]">
+          <i class="fa-solid fa-layer-group text-violet"></i>
+        </span>
+        الفئات المدعومة (19 فئة)
+      </h3>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+        <span class="tag-pill">عيادات طبية</span>
+        <span class="tag-pill">صيدليات</span>
+        <span class="tag-pill">مراكز تجميل نسائية</span>
+        <span class="tag-pill">مراكز الحلاقة الرجالية</span>
+        <span class="tag-pill">مطاعم</span>
+        <span class="tag-pill">معارض اثاث</span>
+        <span class="tag-pill">معارض سيارات</span>
+        <span class="tag-pill">محلات ملابس رجالي نسائي اطفال</span>
+        <span class="tag-pill">محلات العطور</span>
+        <span class="tag-pill">مراكز الكوزمتك</span>
+        <span class="tag-pill">محلات تجارية</span>
+        <span class="tag-pill">شركات ناشئة</span>
+        <span class="tag-pill">شركات العقار</span>
+        <span class="tag-pill">كافيهات</span>
+        <span class="tag-pill">مجمعات تجارية</span>
+        <span class="tag-pill">وكالات</span>
+        <span class="tag-pill">وكالات تبديل زيوت السيارات</span>
+        <span class="tag-pill">مراكز غسل السيارات</span>
+        <span class="tag-pill">مراكز تصليح السيارات</span>
+      </div>
+    </section>
+
+    <!-- How to deploy -->
+    <section class="glass-card p-8 mb-10" aria-label="كيفية التشغيل">
+      <h3 class="text-xl font-extrabold text-ink mb-6 flex items-center gap-3">
+        <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal/20 to-teal-deep/30 flex items-center justify-center border border-teal/15 shadow-[0_0_20px_rgba(46,196,168,0.15)]">
+          <i class="fa-solid fa-rocket text-teal"></i>
+        </span>
+        كيفية التشغيل والنشر
+      </h3>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="p-5 rounded-2xl bg-void/50 border border-white/[0.05]">
+          <h4 class="font-extrabold text-amber mb-3">1. التثبيت</h4>
+          <pre class="text-[12px] font-mono text-ink-soft leading-relaxed bg-deep/60 rounded-lg p-3 border border-white/[0.05]">pip install -r requirements.txt</pre>
+        </div>
+        <div class="p-5 rounded-2xl bg-void/50 border border-white/[0.05]">
+          <h4 class="font-extrabold text-teal mb-3">2. التشغيل المحلي</h4>
+          <pre class="text-[12px] font-mono text-ink-soft leading-relaxed bg-deep/60 rounded-lg p-3 border border-white/[0.05]">python app.py</pre>
+        </div>
+        <div class="p-5 rounded-2xl bg-void/50 border border-white/[0.05]">
+          <h4 class="font-extrabold text-violet mb-3">3. التشغيل عبر Gunicorn</h4>
+          <pre class="text-[12px] font-mono text-ink-soft leading-relaxed bg-deep/60 rounded-lg p-3 border border-white/[0.05]">gunicorn -w 2 -b 0.0.0.0:5000 app:app</pre>
+        </div>
+        <div class="p-5 rounded-2xl bg-void/50 border border-white/[0.05]">
+          <h4 class="font-extrabold text-rose mb-3">4. متطلبات Chrome</h4>
+          <p class="text-sm text-ink-muted leading-relaxed">يجب تثبيت <strong class="text-ink-soft">Chrome</strong> و <strong class="text-ink-soft">ChromeDriver</strong> في بيئة النشر (Render / Railway) عبر أوامر البناء.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toast -->
+    <div id="copyToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 opacity-0 translate-y-4 pointer-events-none transition-all duration-300" role="status" aria-live="polite">
+      <div class="glass-card px-5 py-3.5 flex items-center gap-3 shadow-2xl shadow-black/40 border-teal/20">
+        <i class="fa-solid fa-check-circle text-teal"></i>
+        <span class="text-sm font-bold text-ink">تم نسخ الكود بنجاح!</span>
+      </div>
+    </div>
+
+    <script>
+      function copyBlock(id) {
+        const block = document.getElementById(id);
+        const text = block.innerText || block.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          const toast = document.getElementById('copyToast');
+          toast.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
+          toast.classList.add('opacity-100', 'translate-y-0');
+          setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+            toast.classList.remove('opacity-100', 'translate-y-0');
+          }, 2200);
+        }).catch(() => {
+          alert('حدث خطأ أثناء النسخ. الرجاء نسخ الكود يدوياً.');
+        });
+      }
+    </script>
+
+    <footer class="text-center text-ink-ghost text-sm mb-8">
+      <p class="mb-2">تم تطوير الكود باستخدام Python و Flask و Selenium بشكل مفتوح المصدر ومجاني بالكامل.</p>
+      <p>جميع البيانات تُجمع من <strong class="text-ink-soft">Google Maps</strong> عبر متصفح بدون أي API مدفوع.</p>
+    </footer>
+  </main>
+</body>
+</html>
